@@ -30,7 +30,6 @@ tajima_ <- function () {
         tmp_[, chrom_start := BIN_START]
         tmp_[, nsize := diff(results[2:3, BIN_START])]
         tmp_[, chrom_end := BIN_START + nsize - 1]
-        tmp_[, slide := nsize]
         
         return (tmp_)
     }
@@ -42,7 +41,6 @@ fanwu_ <- function () {
         colnames(tmp_) <- c("chrom_start", "chrom_end", "nsize", "S", "Eta", "Eta_E", "Pi", "FuLi_D", "FuLi_F", "FayWu_H", "pop", "chr")
         
         tmp_ <- melt.data.table(tmp_, id.vars = c("pop", "chr", "chrom_start", "chrom_end", "nsize"))
-        tmp_[, slide := nsize]
         
         return (tmp_)
     }
