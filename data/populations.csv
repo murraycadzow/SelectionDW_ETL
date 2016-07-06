@@ -1,0 +1,34 @@
+pop,description,superPop,genotypePlatform
+CHB,Han Chinese in Bejing China,EAS,Illumina HiSeq
+JPT,Japanese in Tokyo Japan,EAS,Illumina HiSeq
+CHS,Southern Han Chinese,EAS,Illumina HiSeq
+CDX,Chinese Dai in Xishuangbanna China,EAS,Illumina HiSeq
+KHV,Kinh in Ho Chi Minh City Vietnam,EAS,Illumina HiSeq
+CEU,Utah Residents (CEPH) with Northern and Western Ancestry,EUR,Illumina HiSeq
+TSI,Toscani in Italia,EUR,Illumina HiSeq
+FIN,Finnish in Finland,EUR,Illumina HiSeq
+GBR,British in England and Scotland,EUR,Illumina HiSeq
+IBS,Iberian Population in Spain,EUR,Illumina HiSeq
+YRI,Yoruba in Ibadan Nigeria,AFR,Illumina HiSeq
+LWK,Luhya in Webuye Kenya,AFR,Illumina HiSeq
+GWD,Gambian in Western Divisions in the Gambia,AFR,Illumina HiSeq
+MSL,Mende in Sierra Leone,AFR,Illumina HiSeq
+ESN,Esan in Nigeria,AFR,Illumina HiSeq
+ASW,Americans of African Ancestry in SW USA,AFR,Illumina HiSeq
+ACB,African Caribbeans in Barbados,AFR,Illumina HiSeq
+MXL,Mexican Ancestry from Los Angeles USA,AMR,Illumina HiSeq
+PUR,Puerto Ricans from Puerto Rico,AMR,Illumina HiSeq
+CLM,Colombians from Medellin Colombia,AMR,Illumina HiSeq
+PEL,Peruvians from Lima Peru,AMR,Illumina HiSeq
+GIH,Gujarati Indian from Houston Texas,SAS,Illumina HiSeq
+PJL,Punjabi from Lahore Pakistan,SAS,Illumina HiSeq
+BEB,Bengali from Bangladesh,SAS,Illumina HiSeq
+STU,Sri Lankan Tamil from the UK,SAS,Illumina HiSeq
+ITU,Indian Telugu from the UK,SAS,Illumina HiSeq
+AXI,New Zealand and Cook Island Maori,PAC,Affy AXIOM
+OMN,Samoans in New Zealand,PAC,Illumina OMNIexpress
+NZC,Caucasians in New Zealand,EUR ,CoreExome_v24
+NZM,Maori in New Zealand,PAC,CoreExome_v24
+SAM,Samoans in New Zealand,PAC,CoreExome_v24
+TON,Tongans in New Zealand,PAC,CoreExome_v24
+CIM,Cook Island Maori in New Zealand,PAC,CoreExome_v24
