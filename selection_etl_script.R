@@ -20,21 +20,6 @@ setwd("/mnt/DataDrive/Scratch/SelectionDW/")
 # functions are utility functions passed to transform_().
 # Each function operates on a results file, which I have specifically not supplied as
 # a parameter. It will be inherited in the calling scope within the transform_() fucntion
-# RETURNS:
-# --------
-#    data.table (pop, chr, chrom_start, chrom_end, nzise, variable, value)
-#    where, variable = statistic name
-#           value = the actual value
-# For example, FanWu:
-#    pop | chr | chrom_start | chrom_end | nzise | variable | value |
-#    ---   ---   -----------   ---------   -----   --------   -----
-#    GBR | 10  | 10945094    | 34534957  | 30000 | S        | 1.38  |
-#    ..  |     |             |           |       | S        | 45.6  |
-#    ...
-#        |     |             |           |       | Eta      | 0     |
-#    ...
-#        |     |             |           |       | FuLi_D   | 2.45  |
-#    ...
 tajima_ <- function () {
     
     function (results) {
@@ -45,6 +30,7 @@ tajima_ <- function () {
         tmp_[, chrom_start := BIN_START]
         tmp_[, nsize := diff(results[2:3, BIN_START])]
         tmp_[, chrom_end := BIN_START + nsize - 1]
+        tmp_[, slide := nsize]
         
         return (tmp_)
     }
@@ -56,16 +42,24 @@ fanwu_ <- function () {
         colnames(tmp_) <- c("chrom_start", "chrom_end", "nsize", "S", "Eta", "Eta_E", "Pi", "FuLi_D", "FuLi_F", "FayWu_H", "pop", "chr")
         
         tmp_ <- melt.data.table(tmp_, id.vars = c("pop", "chr", "chrom_start", "chrom_end", "nsize"))
+        tmp_[, slide := nsize]
         
         return (tmp_)
     }
 }
 
-get_utility_function <- function (base_directory) {
-    util_ <- if (grepl("TD", base_directory)) tajima_()
-             else if (grepl("FAWH", base_directory)) fanwu_()
-             else tajima_()
-    return (util_)
+stat_switch <- function (file_) {
+    
+    stat_ <- if (grepl(".taj_d$", file_)) list(id = "tajima", util_ = tajima_())
+             else if (grepl(".faw$", file_)) list(id = "fanwu", util_ = fanwu_())
+             else if (grepl(".fst$", file_)) list(id = "fst", util_ = fst_())
+             else if (grepl(".kaks$", file_)) list(id = "kaks", util_ = kaks_())
+             else if (grepl(".af$", file_)) list(id = "af", util_ = af_())
+             else if (grepl(".nsl.", file_)) list(id = "nsl", util_ = nsl_())
+             else if (grepl(".ihs.", file_)) list(id = "ihs", util_ = ihs_())
+             else NULL
+    
+    return (stat_)
 }
 
 #### helper functions
@@ -110,37 +104,34 @@ init_ <- function () {
 }
 
 # Extract data from raw results files
-# This requires a little bit of thought.
-#   - currently I have two directories: TD and FAWH
-#   - each directory contains sub-folders for each population
-#   - the folder names map to dimPopData.pop
-#   - each folder contains 1 file per chromosome, these are consistenly formatted
-#   - the raw format of TD and FAWH results files are very different
-#   - however, they can both be munged into a consistent format (pop, chr, start, end, statistic, n(size))
+# We (Murray and I) have agreed on the following:
+#
+#    1. the ETL pipeline will operate on a single, user-defined directory 
+#       which contains all of the results files for a SINGLE statistic.
+#    2. the statistic type will be identified by the file extensions
+#    3. The user must supply the experiment id as an arguement to main()
 
-# for population, X, read all results files
-extract_ <- function (population = NULL, base_directory = NULL) {
+# extract_
+# Given a single file, extract the raw data
+extract_ <- function (file_ = NULL, stat_ = NULL) {
     
-    print("        Extracting results files ...")
-    root_ <- sprintf("%s/%s/results/", base_directory, population)
-    chromosome_files <- list.files(root_, full.names = FALSE)
-    
-    parse_ <- function (filename) {
-        prefix_ <- strsplit(filename, "\\.")[[1]][1]
+    parse_ <- function () {
+        prefix_ <- strsplit(file_, "\\.")[[1]][1]
         chr_ <- as.integer(substring(prefix_, first = 4))
         
         return (chr_)
     }
-    raw <- rbindlist(lapply(chromosome_files, 
-                                function (x) {
-                                    tmp <- data.table(read.table(paste0(root_, x), 
-                                                 skip = ifelse(grepl("FAWH", x), 5, 1),
-                                                 header = FALSE))
-                                    tmp[, pop := population]
-                                    tmp[, chr := parse_(x)]
+    header_ <- function () {
+        nrows <- if (stat_[["id"]] == "fanwu") 5
+                 else if (stat_[["id"]] %in% c("ihs", "nsl")) 0
+                 else 1
+    }
+    raw <- data.table(read.table(file_,
+                                 skip = header_(stat_),
+                                 header = FALSE))
+    raw[, pop := population]
+    raw[, chr := parse_(x)]
                                     
-                                    return (tmp)
-                                }))
     return (raw)
 }
 # end result: (chr, start, end, pop, stat, nsize, slide, type)
@@ -180,30 +171,34 @@ pipeline <- function (pop, base, utility, experiment_id) {
         load_(experiment_id = experiment_id)   
 }
 
-main <- function (experiment_id = 1, init = FALSE, dir_ = "/mnt/DataDrive/Scratch/SelectionDW/data/SelectionResults") {
-    
-    # initialise the DW
-    if (init) {
-        print("Initialising the data warehouse...")
-        init_()
-    }
+main <- function (experiment_id = 1, results_directory = NULL) {
     
     # begin to load data files
-    base_directories <- list.dirs(dir_, full.names = TRUE, recursive = FALSE)
+    files_ <- list.files(results_directory, full.names = TRUE, recursive = FALSE, pattern = "\\.")
     
-    for (base_ in base_directories) {
+    stat_ <- stat_switch(files_[1])
+    if (is.null(stat_)) {
+        print("Unable to recognise type of results files.")
+        stop()
+    }
+    
+    
+    # rewrite below
+    for (file_ in files_) {
         
-        print(sprintf("----    %s    ----", base_))
-        util_ <- get_utility_function(base_)
+        print(sprintf("----    %s    ----", file_))
         
-        for (pop_ in list.dirs(base_, full.names = FALSE, recursive = FALSE)) {
+        for (pop_ in list.dirs(base_, full.names = FALSE, reucrsive = FALSE)) {
             print(sprintf("    %s -- ", pop_))
             try(pipeline(pop_, base_, util_, experiment_id))
         }
     }
 }
 
+init_()
 main(experiment_id = 1, init = TRUE)
+
+x <- "/mnt/DataDrive/Scratch/SelectionDW/data/SelectionResults/FAWH"
 
 # an example of loading experiment 2
 # main(experiment_id = 2)
