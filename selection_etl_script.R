@@ -20,6 +20,21 @@ setwd("/mnt/DataDrive/Scratch/SelectionDW/")
 # functions are utility functions passed to transform_().
 # Each function operates on a results file, which I have specifically not supplied as
 # a parameter. It will be inherited in the calling scope within the transform_() fucntion
+# RETURNS:
+# --------
+#    data.table (pop, chr, chrom_start, chrom_end, nzise, variable, value)
+#    where, variable = statistic name
+#           value = the actual value
+# For example, FanWu:
+#    pop | chr | chrom_start | chrom_end | nzise | variable | value |
+#    ---   ---   -----------   ---------   -----   --------   -----
+#    GBR | 10  | 10945094    | 34534957  | 30000 | S        | 1.38  |
+#    ..  |     |             |           |       | S        | 45.6  |
+#    ...
+#        |     |             |           |       | Eta      | 0     |
+#    ...
+#        |     |             |           |       | FuLi_D   | 2.45  |
+#    ...
 tajima_ <- function () {
     
     function (results) {
