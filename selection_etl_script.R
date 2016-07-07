@@ -135,11 +135,11 @@ extract_ <- function (file_ = NULL, stat_ = NULL) {
     return (raw)
 }
 # end result: (chr, start, end, pop, stat, nsize, slide, type)
-transform_ <- function (results, utility = NULL) {
+transform_ <- function (results, stat_ = NULL) {
     
     print("        Wrangling results files ...")
     schema <- c("pop", "chr", "chrom_start", "chrom_end", "nsize", "variable", "value")
-    tmp <- utility(results)
+    tmp <- stat_[["util_"]](results)
     
     return (tmp[, schema, with = FALSE])
 }
@@ -165,8 +165,10 @@ load_ <- function (results, experiment_id = 1) {
     
 }
 
-pipeline <- function (pop, base, utility, experiment_id) {
-    extract_(population = pop, base_directory = base) %>% 
+pipeline <- function (experiment_id, dir, stat_) {
+    
+    rbindlist(files_, extract_(stat_ = stat_))
+    extract_() %>% 
         transform_(utility = utility) %>% 
         load_(experiment_id = experiment_id)   
 }
@@ -198,7 +200,9 @@ main <- function (experiment_id = 1, results_directory = NULL) {
 init_()
 main(experiment_id = 1, init = TRUE)
 
-x <- "/mnt/DataDrive/Scratch/SelectionDW/data/SelectionResults/FAWH"
+mydir <- "/mnt/DataDrive/Scratch/SelectionDW/data/SelectionResults/FAWH"
+files_ <- list.files(mydir, full.names = TRUE, recursive = FALSE, pattern = "\\.")
+
 
 # an example of loading experiment 2
 # main(experiment_id = 2)
