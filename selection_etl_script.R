@@ -10,7 +10,7 @@
 #                 will require loading into staging and then munging to create dimPos and dimGene
 
 library(data.table)
-library(plyr)  # for the %>% function :)
+library(dplyr)  # for the %>% function :)
 setwd("/mnt/DataDrive/Scratch/SelectionDW/")
 
 
@@ -48,9 +48,9 @@ fanwu_ <- function () {
     }
 }
 
-stat_switch <- function (file_) {
+utility_switch <- function (file_) {
     
-    stat_ <- if (grepl(".taj_d$", file_)) list(id = "tajima", util_ = tajima_())
+    util_ <- if (grepl(".taj_d$", file_)) list(id = "tajima", util_ = tajima_())
              else if (grepl(".faw$", file_)) list(id = "fanwu", util_ = fanwu_())
              else if (grepl(".fst$", file_)) list(id = "fst", util_ = fst_())
              else if (grepl(".kaks$", file_)) list(id = "kaks", util_ = kaks_())
@@ -59,7 +59,7 @@ stat_switch <- function (file_) {
              else if (grepl(".ihs.", file_)) list(id = "ihs", util_ = ihs_())
              else NULL
     
-    return (stat_)
+    return (util_)
 }
 
 #### helper functions
@@ -111,35 +111,47 @@ init_ <- function () {
 #    2. the statistic type will be identified by the file extensions
 #    3. The user must supply the experiment id as an arguement to main()
 
-# extract_
-# Given a single file, extract the raw data
-extract_ <- function (file_ = NULL, stat_ = NULL) {
+# parse_
+# extracts population and chromosome from a results file
+parse_ <- function (x) {
+    prefix_ <- strsplit(x, "\\.")[[1]][1]
+    chr_ <- as.integer(substring(prefix_, first = 4))
+    pop_ <- substring(prefix_, first = 1, last = 3)
     
-    parse_ <- function () {
-        prefix_ <- strsplit(file_, "\\.")[[1]][1]
-        chr_ <- as.integer(substring(prefix_, first = 4))
-        
-        return (chr_)
-    }
+    return (data.table(chr = chr_, pop = pop_))
+}
+
+# extract_
+# Given a list of files, extract the raw data and combine
+# NOTE: assumes that all files are the output of a single statistic
+extract_ <- function (files = NULL, utility = NULL) {
+    
     header_ <- function () {
-        nrows <- if (stat_[["id"]] == "fanwu") 5
-                 else if (stat_[["id"]] %in% c("ihs", "nsl")) 0
+        nrows <- if (utility[["id"]] == "fanwu") 5
+                 else if (utility[["id"]] %in% c("ihs", "nsl")) 0
                  else 1
     }
-    raw <- data.table(read.table(file_,
-                                 skip = header_(stat_),
-                                 header = FALSE))
-    raw[, pop := population]
-    raw[, chr := parse_(x)]
+    
+    raw <- rbindlist(
+        lapply(files, function (f_) {
+            meta <- parse_(f_)
+            
+            tmp <- data.table(read.table(f_, skip = header_(), header = FALSE))
+            tmp[, pop := meta[["pop"]]]
+            tmp[, chr := meta[["chr"]]]
+            
+            return (tmp)
+        })
+    )
                                     
     return (raw)
 }
 # end result: (chr, start, end, pop, stat, nsize, slide, type)
-transform_ <- function (results, stat_ = NULL) {
+transform_ <- function (results, utility = NULL) {
     
     print("        Wrangling results files ...")
     schema <- c("pop", "chr", "chrom_start", "chrom_end", "nsize", "variable", "value")
-    tmp <- stat_[["util_"]](results)
+    tmp <- utility[["util_"]](results)
     
     return (tmp[, schema, with = FALSE])
 }
@@ -165,44 +177,48 @@ load_ <- function (results, experiment_id = 1) {
     
 }
 
-pipeline <- function (experiment_id, dir, stat_) {
-    
-    rbindlist(files_, extract_(stat_ = stat_))
-    extract_() %>% 
+pipeline <- function (experiment_id, files, utility) {
+    extract_(files, utility) %>% 
         transform_(utility = utility) %>% 
         load_(experiment_id = experiment_id)   
 }
 
 main <- function (experiment_id = 1, results_directory = NULL) {
     
-    # begin to load data files
-    files_ <- list.files(results_directory, full.names = TRUE, recursive = FALSE, pattern = "\\.")
+    # Find results files
+    setwd(results_directory)
+    files_ <- list.files(".", full.names = FALSE, recursive = FALSE, pattern = "\\.")
     
-    stat_ <- stat_switch(files_[1])
-    if (is.null(stat_)) {
+    # Link current files with a statistic and appropriate utility function
+    util_ <- utility_switch(files_[1])
+
+    if (is.null(util_)) {
         print("Unable to recognise type of results files.")
         stop()
     }
     
-    
-    # rewrite below
-    for (file_ in files_) {
+    # Run pipeline per population
+    # Note: cannot run over ALL populations at once, as this produces
+    #       millions of rows of data.
+    populations <- rbindlist(lapply(files_, parse_))
+    for (pop in unique(populations[["pop"]])) {
         
-        print(sprintf("----    %s    ----", file_))
+        print(sprintf("----    %s    ----", pop))
         
-        for (pop_ in list.dirs(base_, full.names = FALSE, reucrsive = FALSE)) {
-            print(sprintf("    %s -- ", pop_))
-            try(pipeline(pop_, base_, util_, experiment_id))
-        }
+        popfiles <- files_[grepl(pop, files_)]
+        pipeline(experiment_id, popfiles, util_)
     }
 }
 
-init_()
-main(experiment_id = 1, init = TRUE)
+### For testing only
+test_pipeline <- function (directory = "/mnt/DataDrive/Scratch/SelectionDW/") {
+    
+    setwd(directory)
+    
+    print("Initialising the data warehouse")
+    init_()
+    
+    main(experiment_id = 1, "./data/SelectionResults/FAWH")
+}
 
-mydir <- "/mnt/DataDrive/Scratch/SelectionDW/data/SelectionResults/FAWH"
-files_ <- list.files(mydir, full.names = TRUE, recursive = FALSE, pattern = "\\.")
-
-
-# an example of loading experiment 2
-# main(experiment_id = 2)
+####    test_pipeline()
