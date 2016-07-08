@@ -16,21 +16,21 @@ setwd("/mnt/DataDrive/Scratch/SelectionDW/")
 
 # Transformation Functions
 #
-# Each function defines a data transformation specific to the statistic results. These
-# functions are utility functions passed to transform_().
-# Each function operates on a results file, which I have specifically not supplied as
-# a parameter. It will be inherited in the calling scope within the transform_() fucntion
+# Each function defines a data transformation specific to the statistic results. 
+# Must return a data.table (pop, chr, start, end, nzise, variable, value)
+# where: 
+#    variable: the statistic e.g. tajimad, Eta_E, FuLi_D etc.
+#    value: the value that goes with the statistic, as the name states.
 tajima_ <- function () {
     
     function (results) {
-        colnames(results) <- c("chr", "BIN_START", "N_SNPS", "TajimaD", "pop", "chr")
+        colnames(results) <- c("chrom", "BIN_START", "N_SNPS", "TajimaD", "pop", "chr")
         tmp_ <- results[, .(pop, chr, BIN_START, N_SNPS, TajimaD)]
         tmp_ <- melt.data.table(tmp_, id.vars = names(tmp_)[-5])
         
         tmp_[, chrom_start := BIN_START]
         tmp_[, nsize := diff(results[2:3, BIN_START])]
         tmp_[, chrom_end := BIN_START + nsize - 1]
-        tmp_[, slide := nsize]
         
         return (tmp_)
     }
@@ -42,11 +42,41 @@ fanwu_ <- function () {
         colnames(tmp_) <- c("chrom_start", "chrom_end", "nsize", "S", "Eta", "Eta_E", "Pi", "FuLi_D", "FuLi_F", "FayWu_H", "pop", "chr")
         
         tmp_ <- melt.data.table(tmp_, id.vars = c("pop", "chr", "chrom_start", "chrom_end", "nsize"))
-        tmp_[, slide := nsize]
         
         return (tmp_)
     }
 }
+fst_ <- function () {
+    function (results) {
+        colnames(results) <- c("CHROM", "BIN_START", "BIN_END", "N_VARIANTS", "WEIGHTED_FST", "MEAN_FST", "pop", "chr")
+        tmp_ <- results[, -c("CHROM"), with = FALSE]
+        tmp_ <- melt.data.table(tmp_, id.vars = c("pop", "chr", "BIN_START", "BIN_END", "N_VARIANTS"))
+        
+        return (tmp_)
+    }
+}
+kaks_ <- function () {
+    function (results) {
+        colnames(results) <- c("GeneID", "GeneName", "ka", "ks", "kcomputed", "pop", "chr")
+        tmp_ <- metl.data.table(results, id.vars = c("GeneID", "GeneName"))
+        
+        return (tmp_)
+    }
+    # code here to map genes to positions.
+}
+af_ <- function () {
+    function (results) {
+        colnames(results) <- c("POS", "Ref", "Alt", "Anc", "MAF", "DAF", "pop", "chr")
+        # do we need to keep the allele info?
+    }
+}
+nsl_ <- function () {
+    function (results) {
+        
+    }
+}
+ihs_ <- function () {}
+xpehh_ <- function () {}
 
 utility_switch <- function (file_) {
     
@@ -57,6 +87,7 @@ utility_switch <- function (file_) {
              else if (grepl(".af$", file_)) list(id = "af", util_ = af_())
              else if (grepl(".nsl.", file_)) list(id = "nsl", util_ = nsl_())
              else if (grepl(".ihs.", file_)) list(id = "ihs", util_ = ihs_())
+             else if (grepl(".xpehh.", file_)) list(id = "xpehh", util_ = xpehh_())
              else NULL
     
     return (util_)
