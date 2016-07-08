@@ -251,20 +251,21 @@ main <- function (experiment_id = 1, results_directory = NULL) {
     # skip fst, xpehh and kaks at this stage.
     if (util_[["id"]] %in% c("fst", "xpehh", "kaks")) {
         print("Not able to load fst, xpehh or kaks at this stage.")
-    } else {
-    
-        # Run pipeline per population
-        # Note: cannot run over ALL populations at once, as this produces
-        #       millions of rows of data.
-        populations <- rbindlist(lapply(files_, parse_))
-        for (pop in unique(populations[["pop"]])) {
-            
-            print(sprintf("----    %s    ----", pop))
-            
-            popfiles <- files_[grepl(pop, files_)]
-            pipeline(experiment_id, popfiles, util_)
-        }
+        return (-1)
     }
+
+    # Run pipeline per population
+    # Note: cannot run over ALL populations at once, as this produces
+    #       millions of rows of data.
+    populations <- rbindlist(lapply(files_, parse_))
+    for (pop in unique(populations[["pop"]])) {
+        
+        print(sprintf("----    %s    ----", pop))
+        
+        popfiles <- files_[grepl(pop, files_)]
+        pipeline(experiment_id, popfiles, util_)
+    }
+    return (0)
 }
 
 ### For testing only
