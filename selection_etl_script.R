@@ -46,19 +46,13 @@ fanwu_ <- function () {
         return (tmp_)
     }
 }
-fst_ <- function () {
-    function (results) {
-        colnames(results) <- c("CHROM", "BIN_START", "BIN_END", "N_VARIANTS", "WEIGHTED_FST", "MEAN_FST", "pop", "chr")
-        tmp_ <- results[, -c("CHROM"), with = FALSE]
-        tmp_ <- melt.data.table(tmp_, id.vars = c("pop", "chr", "BIN_START", "BIN_END", "N_VARIANTS"))
-        
-        return (tmp_)
-    }
-}
+# fst_ <- function () {
+#     # fst is cross-populational, not implemented at this stage.
+# }
 kaks_ <- function () {
     function (results) {
         colnames(results) <- c("GeneID", "GeneName", "ka", "ks", "kcomputed", "pop", "chr")
-        tmp_ <- metl.data.table(results, id.vars = c("GeneID", "GeneName"))
+        tmp_ <- melt.data.table(results, id.vars = c("GeneID", "GeneName"))
         
         return (tmp_)
     }
@@ -67,16 +61,40 @@ kaks_ <- function () {
 af_ <- function () {
     function (results) {
         colnames(results) <- c("POS", "Ref", "Alt", "Anc", "MAF", "DAF", "pop", "chr")
-        # do we need to keep the allele info?
+        
+        # Discussed with Murray, dropping allele information at the moment, and will load this
+        # separately in the future.
+        
+        tmp_ <- results[, .(pop, chr, chrom_start = POS, chrom_end = POS + 1, nsize = 1, MAF, DAF)]
+        tmp_ <- melt.data.table(tmp_, id.vars = c("pop", "chr", "chrom_start", "chrom_end", "nsize"))
+        
+        return (tmp_)
+        
     }
 }
 nsl_ <- function () {
     function (results) {
+        colnames(results) <- c("locus_id", "chrom_start", "nsl_freq_1", "sL1","sL0", "unstd_nsl", "norm_nsl", "significant_nsl", "pop", "chr")
         
+        tmp_ <- results[, .(pop, chr, chrom_start, chrom_end = chrom_start + 1, nsize = 1, nsl_freq_1, sL1, sL0, unstd_nsl, norm_nsl, significant_nsl)]
+        tmp_ <- melt.data.table(tmp_, id.vars = c("pop", "chr", "chrom_start", "chrom_end", "nsize"))
+        
+        return (tmp_)
     }
 }
-ihs_ <- function () {}
-xpehh_ <- function () {}
+ihs_ <- function () {
+    function (results) {
+        colnames(results) <- c("locus_id", "chrom_start", "ihs_freq_1", "ihh1","ihh0", "unstd_ihs", "norm_ihs", "significant_ihs", "pop", "chr")
+        
+        tmp_ <- results[, .(pop, chr, chrom_start, chrom_end = chrom_start + 1, nsize = 1, ihs_freq_1, ihh1, ihh0, unstd_ihs, norm_ihs, significant_ihs)]
+        tmp_ <- melt.data.table(tmp_, id.vars = c("pop", "chr", "chrom_start", "chrom_end", "nsize"))
+        
+        return (tmp_)
+    }
+}
+# xpehh_ <- function () {
+#     # xpehh is cross-populational, not implemented at this stage.
+# }
 
 utility_switch <- function (file_) {
     
@@ -146,7 +164,9 @@ init_ <- function () {
 # extracts population and chromosome from a results file
 parse_ <- function (x) {
     prefix_ <- strsplit(x, "\\.")[[1]][1]
-    chr_ <- as.integer(substring(prefix_, first = 4))
+    chr_ <- as.integer(substring(prefix_, 
+                                 first = 4, 
+                                 last = ifelse((nchar(prefix_) - 3) > 1, 5, 4)))  # some mumbo jumbo to handle inconsistent naming conventions
     pop_ <- substring(prefix_, first = 1, last = 3)
     
     return (data.table(chr = chr_, pop = pop_))
@@ -228,16 +248,22 @@ main <- function (experiment_id = 1, results_directory = NULL) {
         stop()
     }
     
-    # Run pipeline per population
-    # Note: cannot run over ALL populations at once, as this produces
-    #       millions of rows of data.
-    populations <- rbindlist(lapply(files_, parse_))
-    for (pop in unique(populations[["pop"]])) {
-        
-        print(sprintf("----    %s    ----", pop))
-        
-        popfiles <- files_[grepl(pop, files_)]
-        pipeline(experiment_id, popfiles, util_)
+    # skip fst, xpehh and kaks at this stage.
+    if (util_[["id"]] %in% c("fst", "xpehh", "kaks")) {
+        print("Not able to load fst, xpehh or kaks at this stage.")
+    } else {
+    
+        # Run pipeline per population
+        # Note: cannot run over ALL populations at once, as this produces
+        #       millions of rows of data.
+        populations <- rbindlist(lapply(files_, parse_))
+        for (pop in unique(populations[["pop"]])) {
+            
+            print(sprintf("----    %s    ----", pop))
+            
+            popfiles <- files_[grepl(pop, files_)]
+            pipeline(experiment_id, popfiles, util_)
+        }
     }
 }
 
