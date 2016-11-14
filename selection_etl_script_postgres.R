@@ -12,7 +12,7 @@
 library(data.table)
 library(dplyr)  # for the %>% function :)
 setwd("~/Git_repos/SelectionDW_ETL/")
-
+options(scipen = 999)
 
 # Transformation Functions
 #

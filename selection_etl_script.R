@@ -11,7 +11,7 @@
 
 library(data.table)
 library(dplyr)  # for the %>% function :)
-setwd("/mnt/DataDrive/Scratch/SelectionDW/")
+setwd("~/Git_repos/SelectionDW_ETL/")
 
 
 # Transformation Functions
@@ -112,9 +112,9 @@ utility_switch <- function (file_) {
 }
 
 #### helper functions
-db_execute <- function (query, username = "etl_user", host = "localhost", db = "selectionDW") {
-    execute <- sprintf('mysql -u %s -h %s -D %s -e "%s"',
-                       username, host, db, query)
+db_execute <- function (query,  db = "selectionDW") {
+    execute <- sprintf('mysql --defaults-file=~/.selectiondw.cnf -D %s --local-infile=1 -e "%s"',
+                        db, query)
     
     return (system(execute))
 }
