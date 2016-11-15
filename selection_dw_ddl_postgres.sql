@@ -40,6 +40,20 @@ create table staging_results
 );
 create index idx_stage_results on staging_results (chrom, chrom_start, chrom_end);
 
+drop table if exists staging_inter_results;
+create table staging_inter_results
+(
+	pop varchar(3),
+	pop2 varchar(3),
+    chrom smallint,
+    chrom_start int,
+    chrom_end int,
+    nsize int,
+    variable varchar(20),
+    statValue real
+);
+create index idx_stage_inter_results on staging_inter_results (chrom, chrom_start, chrom_end);
+
 ---#### Main DW ####
 ---# position table
 ---# Contains the Chromosome and Allele information for each SNP

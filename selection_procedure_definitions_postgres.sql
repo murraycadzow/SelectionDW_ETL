@@ -116,7 +116,17 @@ begin
                ('ihh0', NULL),
                ('unstd_ihs', NULL),
                ('norm_ihs', NULL),
-               ('significant_ihs', NULL);
+               ('significant_ihs', NULL),
+               ('pop1_freq_1', NULL), ---# xpehh stats
+               ('ihhA', NULL),
+               ('pop2_freq_1',NULL),
+               ('ihhB', NULL),
+               ('unstd_xpehh', NULL),
+               ('norm_xpehh', NULL),
+               ('significant_xpehh', NULL)
+               
+               
+               ;
 end
 $function$;
 
@@ -139,6 +149,23 @@ AS $function$begin
 	DO NOTHING;
 end
 $function$;
+
+
+---# populate dimPos with new variants
+CREATE OR REPLACE FUNCTION public.check_inter_variants()
+    RETURNS void
+    LANGUAGE 'plpgsql'
+    VOLATILE
+
+AS $function$begin
+	INSERT INTO dimpos (chrom, chrom_start, chrom_end)
+        SELECT DISTINCT chrom, chrom_start, chrom_end
+        FROM staging_inter_results
+	ON CONFLICT  (chrom, chrom_start, chrom_end)
+	DO NOTHING;
+end
+$function$;
+
 
 
 ---# take results from staging and populate intraSel
@@ -166,3 +193,32 @@ ALTER FUNCTION public.unstage()
     OWNER TO postgres;
 
 GRANT ALL ON FUNCTION public.unstage() TO PUBLIC;
+
+
+
+---# take results from inter_staging and populate interSel
+---# NOTE: takes an INT as input parameter - this is the experiment ID
+---#       this must be determined programmatically during the loading script
+CREATE OR REPLACE FUNCTION public.inter_unstage(IN experiment_id integer)
+    RETURNS void
+    LANGUAGE 'plpgsql'
+    NOT LEAKPROOF 
+AS $function$
+begin
+	INSERT INTO interSel (posID, popID1, popID2, statValue, statID, experimentID)
+		SELECT d2.posID, d1.pop, d4.pop2, st.statValue, d3.statID, experiment_id 
+        FROM staging_results as st
+          INNER JOIN dimPopData as d1 on d1.pop = st.pop
+          INNER JOIN domPopData as d4 on d4.pop2 = st.pop
+          INNER JOIN dimPos as d2 on (
+				d2.chrom = st.chrom
+			AND d2.chrom_start = st.chrom_start
+            AND d2.chrom_end = st.chrom_end)
+		  INNER JOIN dimStat as d3 on d3.statName = st.variable;
+end
+$function$;
+
+ALTER FUNCTION public.inter_unstage()
+    OWNER TO postgres;
+
+GRANT ALL ON FUNCTION public.inter_unstage() TO PUBLIC;
