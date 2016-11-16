@@ -90,9 +90,9 @@ CREATE OR REPLACE FUNCTION public.populate_stat()
 AS $function$
 begin
 	INSERT INTO dimStat (statName, statDescription)
-        VALUES ('TajimaD', 'Tajimas D'), 
+        VALUES ('TajimaD', 'Tajimas D'), ---# Tajimas D stats
                ('NumSites_TajimasD', 'Number of sites in window for Tajimas D'), 
-               ('NumSites_FayWuH', 'Number of sites in window for Fay and Wus H'), 
+               ('NumSites_FayWuH', 'Number of sites in window for Fay and Wus H'), ---# variscan stats
                ('S', 'Segregating sites'), 
                ('Eta', NULL),
                ('Eta_E', NULL),
@@ -100,32 +100,33 @@ begin
                ('FuLi_D', 'Fu and Lis D'),
                ('FuLi_F', 'Fu and Lis F'),
                ('FayWu_H','Fay and Wus H'),
-               ('ka', 'KAKS statistic'),
+               ('ka', 'KAKS statistic'), ---# ka/ks
                ('ks', 'KAKS statistic'),
                ('kcomputed', 'KAKS ka / ks + 1'),
-               ('MAF', 'AF statistic'),
+               ('MAF', 'AF statistic'), ---# af stats
                ('DAF', 'AF statistic'),
-               ('nsl_freq_1', NULL),
+               ('nsl_freq_1', NULL), ---# nSL stats
                ('sL1', NULL),
                ('sL0', NULL),
                ('unstd_nsl', NULL),
                ('norm_nsl', NULL),
                ('significant_nsl', NULL),
-               ('ihs_freq_1', NULL),
+               ('ihs_freq_1', NULL), ---# iHS stats
                ('ihh1', NULL),
                ('ihh0', NULL),
                ('unstd_ihs', NULL),
                ('norm_ihs', NULL),
                ('significant_ihs', NULL),
-               ('pop1_freq_1', NULL), ---# xpehh stats
+               ('popA_freq_1', NULL), ---# xpehh stats
                ('ihhA', NULL),
-               ('pop2_freq_1',NULL),
+               ('popB_freq_1',NULL),
                ('ihhB', NULL),
                ('unstd_xpehh', NULL),
                ('norm_xpehh', NULL),
-               ('significant_xpehh', NULL)
-               
-               
+               ('significant_xpehh', NULL),
+               ('nvariants_FST', NULL), ---#fst
+               ('weighted_FST',NULL),
+               ('mean_FST', NULL)
                ;
 end
 $function$;
@@ -206,10 +207,10 @@ CREATE OR REPLACE FUNCTION public.inter_unstage(IN experiment_id integer)
 AS $function$
 begin
 	INSERT INTO interSel (posID, popID1, popID2, statValue, statID, experimentID)
-		SELECT d2.posID, d1.pop, d4.pop2, st.statValue, d3.statID, experiment_id 
-        FROM staging_results as st
+		SELECT d2.posID, d1.popID, d4.popID, st.statValue, d3.statID, experiment_id 
+        FROM staging_inter_results as st
           INNER JOIN dimPopData as d1 on d1.pop = st.pop
-          INNER JOIN domPopData as d4 on d4.pop2 = st.pop
+          INNER JOIN dimPopData as d4 on d4.pop = st.pop2
           INNER JOIN dimPos as d2 on (
 				d2.chrom = st.chrom
 			AND d2.chrom_start = st.chrom_start

@@ -46,9 +46,7 @@ fanwu_ <- function () {
     return (tmp_)
   }
 }
-# fst_ <- function () {
-#     # fst is cross-populational, not implemented at this stage.
-# }
+
 kaks_ <- function () {
   function (results) {
     colnames(results) <- c("GeneID", "GeneName", "ka", "ks", "kcomputed", "pop", "chr")
@@ -94,24 +92,35 @@ ihs_ <- function () {
 }
 
 xpehh_ <- function () {
-  # xpehh is cross-populational, not implemented at this stage.
+  # xpehh is cross-populational
   function (results) {
-    colnames(results) <- c('pos','chrom_start','gpos', "popA_1_freq", "ihhA",'popB_1_freq',"ihhB", "unstd_xpehh", "norm_xpehh", "significant_xpehh","pop","pop2", 'chr')
+    colnames(results) <- c('pos','chrom_start','gpos', "popA_freq_1", "ihhA",'popB_freq_1',"ihhB", "unstd_xpehh", "norm_xpehh", "significant_xpehh","pop","pop2", 'chr')
     
-    tmp_ <- results[, .(pop, pop2, chr, chrom_start, chrom_end = chrom_start + 1, nsize = 1, popA_1_freq, ihhA, popB_1_freq, ihhB, unstd_xpehh, norm_xpehh, significant_xpehh)]
+    tmp_ <- results[, .(pop, pop2, chr, chrom_start, chrom_end = chrom_start + 1, nsize = 1, popA_freq_1, ihhA, popB_freq_1, ihhB, unstd_xpehh, norm_xpehh, significant_xpehh)]
     tmp_ <- melt.data.table(tmp_, id.vars = c("pop", "pop2", "chr", "chrom_start", "chrom_end", "nsize"))
     
     return (tmp_)
     
   }
+}
+
+fst_ <- function () {
+  # fst is cross-populational
+  function(results){
+    colnames(results) <- c('chrom','chrom_start','chrom_end','nvariants_FST','weighted_FST','mean_FST','pop', 'pop2','chr')
+    tmp_ <- results[, .(pop, pop2, chr, chrom_start, chrom_end, nsize = chrom_end-chrom_start, nvariants_FST, weighted_FST, mean_FST )]
+    tmp_ <- melt.data.table(tmp_, id.vars = c("pop", "pop2", "chr", "chrom_start", "chrom_end", "nsize"))
   
+    return (tmp_)
+    
+  }
 }
 
 utility_switch <- function (file_) {
   
   util_ <- if (grepl(".taj_d$", file_)) list(id = "tajima", util_ = tajima_(), type='intra')
   else if (grepl(".faw$", file_)) list(id = "fanwu", util_ = fanwu_(), type='intra')
-  #else if (grepl(".fst$", file_)) list(id = "fst", util_ = fst_(), type='inter')
+  else if (grepl(".fst$", file_)) list(id = "fst", util_ = fst_(), type='inter')
   #else if (grepl(".kaks$", file_)) list(id = "kaks", util_ = kaks_(), type='inter')
   else if (grepl(".af$", file_)) list(id = "af", util_ = af_(), type = 'intra')
   else if (grepl(".nsl.", file_)) list(id = "nsl", util_ = nsl_(), type = 'intra')
@@ -124,7 +133,7 @@ utility_switch <- function (file_) {
 
 #### helper functions
 
-db_execute <- function (query, user = 'murraycadzow', db = "selectiondw") {
+db_execute <- function (query, user = 'murraycadzow', db = "selectiondw_test") {
   execute <- sprintf('psql -U %s -d %s -c "%s"',
                      user, db, query)
   
@@ -308,7 +317,7 @@ loadInter_ <- function (results, experiment_id = 1) {
 
 
 pipeline <- function (experiment_id, files, utility) {
-  if(utility[[type]] == 'intra'){
+  if(utility[['type']] == 'intra'){
     extract_(files, utility) %>% 
       transform_(utility = utility) %>% 
       load_(experiment_id = experiment_id)
@@ -336,8 +345,8 @@ main <- function (experiment_id = 1, results_directory = NULL) {
   }
   
   # skip fst, xpehh and kaks at this stage.
-  if (util_[["id"]] %in% c("fst", "kaks")) {
-    print("Not able to load fst, xpehh or kaks at this stage.")
+  if (util_[["id"]] %in% c("kaks")) {
+    print("Not able to load kaks at this stage.")
     return (-1)
   }
   

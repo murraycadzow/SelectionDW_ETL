@@ -2,9 +2,9 @@
 ---
 --- Murray Cadzow
 --- June 2016
-drop database if exists selectiondw;
-create database selectiondw;
-\connect selectiondw;
+drop database if exists selectiondw_test;
+create database selectiondw_test;
+\connect selectiondw_test;
 
 ---#### STAGING AREA ####
 drop table if exists staging_pop;
