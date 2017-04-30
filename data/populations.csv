@@ -28,7 +28,16 @@ ITU,Indian Telugu from the UK,SAS,Illumina HiSeq
 AXI,New Zealand and Cook Island Maori,PAC,Affy AXIOM
 OMN,Samoans in New Zealand,PAC,Illumina OMNIexpress
 NZC,Caucasians in New Zealand,EUR ,CoreExome_v24
-NZM,Maori in New Zealand,PAC,CoreExome_v24
-SAM,Samoans in New Zealand,PAC,CoreExome_v24
-TON,Tongans in New Zealand,PAC,CoreExome_v24
-CIM,Cook Island Maori in New Zealand,PAC,CoreExome_v24
+NZM,Maori in New Zealand,POL,CoreExome_v24
+SAM,Samoans in New Zealand,POL,CoreExome_v24
+TON,Tongans in New Zealand,POL,CoreExome_v24
+CIM,Cook Island Maori in New Zealand,POL,CoreExome_v24
+NAD,Admixed New Zealand Maori,POL,CoreExome_v24
+EPN,Eastern Polynesian,POL,CoreExome_v24
+WPN,Western Polynesian,POL,CoreExome_v24
+EUR,European Super Population,,Illumina HiSeq
+EAS,East Asian Super Population,,Illumina HiSeq
+SAS,South Asian Super Population,,Illumina HiSeq
+AFR,African Super Population,,Illumina HiSeq
+AMR,American Super Population,,Illumina HiSeq
+POL,Polynesian Super Population,,CoreExome_v24 
