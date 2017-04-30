@@ -1,4 +1,4 @@
-\connect selectiondw;
+\connect selectiondw_test;
 
 ---# initial population of dimExperiment
 CREATE OR REPLACE FUNCTION public.populate_pop()
