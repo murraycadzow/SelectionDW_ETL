@@ -109,6 +109,8 @@ fst_ <- function () {
   function(results){
     colnames(results) <- c('chrom','chrom_start','chrom_end','nvariants_FST','weighted_FST','mean_FST','pop', 'pop2','chr')
     tmp_ <- results[, .(pop, pop2, chr, chrom_start, chrom_end, nsize = chrom_end-chrom_start, nvariants_FST, weighted_FST, mean_FST )]
+    tmp_[weighted_FST < 0] <- 0
+    tmp_[mean_FST < 0] <- 0
     tmp_ <- melt.data.table(tmp_, id.vars = c("pop", "pop2", "chr", "chrom_start", "chrom_end", "nsize"))
   
     return (tmp_)
@@ -363,8 +365,18 @@ main <- function (experiment_id = 1, results_directory = NULL) {
     
     print(sprintf("----    %s    ----", pop))
     
-    popfiles <- files_[grepl(pop, files_)]
-    pipeline(experiment_id, popfiles, util_)
+    popfiles <- files_[grepl(paste0("^",pop), files_)]
+      if(util_[['type']] == 'inter'){
+        for(pop2 in unique(populations[['pop2']])){
+          if(pop != pop2){
+            print(sprintf("----  subpop  %s    ----", pop2))
+            pop2files <- popfiles[grepl(pop2, popfiles)]
+            pipeline(experiment_id, pop2files, util_)
+          }
+        }
+      }else{
+        pipeline(experiment_id, popfiles, util_)
+      }
   }
   return (0)
 }
