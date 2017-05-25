@@ -11,7 +11,7 @@
 
 library(data.table)
 library(dplyr)  # for the %>% function :)
-setwd("~/Git_repos/SelectionDW_ETL/")
+#setwd("~/Git_repos/SelectionDW_ETL/")
 options(scipen = 999)
 
 # Transformation Functions
@@ -371,7 +371,7 @@ main <- function (experiment_id = 1, results_directory = NULL) {
           if(pop != pop2){
             print(sprintf("----  subpop  %s    ----", pop2))
             pop2files <- popfiles[grepl(pop2, popfiles)]
-            pipeline(experiment_id, pop2files, util_)
+            if(length(pop2files) > 0){pipeline(experiment_id, pop2files, util_)}
           }
         }
       }else{
